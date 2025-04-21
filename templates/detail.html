@@ -1,0 +1,64 @@
+{% extends "templates/base.html" %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fa fa-info-circle"></i> 配置详情</h1>
+    <a href="/" class="btn"><i class="fa fa-arrow-left"></i> 返回列表</a>
+</div>
+
+<div class="detail-card">
+    <div class="detail-header">
+        <h2 id="config-name"></h2>
+        <div class="actions">
+            <a id="edit-btn" class="btn btn-primary"><i class="fa fa-edit"></i> 编辑</a>
+            <button id="delete-btn" class="btn btn-danger"><i class="fa fa-trash"></i> 删除</button>
+        </div>
+    </div>
+    
+    <div class="detail-body">
+        <div class="detail-row">
+            <span class="label">URL:</span>
+            <span id="config-url" class="value"></span>
+        </div>
+        <div class="detail-row">
+            <span class="label">方法:</span>
+            <span id="config-method" class="value"></span>
+        </div>
+        <!-- 其他字段类似 -->
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    const configId = new URLSearchParams(window.location.search).get('id');
+    
+    // 加载配置详情
+    $.get(`/api/get?id=${configId}`, function(data) {
+        if(data.code === 0) {
+            const config = data.data;
+            $("#config-name").text(config.name);
+            $("#config-url").text(config.url);
+            $("#config-method").text(config.method);
+            // 填充其他字段...
+            
+            // 编辑按钮事件
+            $("#edit-btn").attr("href", `/edit?id=${configId}`);
+        }
+    });
+    
+    // 删除按钮事件
+    $("#delete-btn").click(function() {
+        if(confirm("确定要删除此配置吗？")) {
+            $.ajax({
+                url: `/api/delete`,
+                type: 'POST',
+                data: { id: configId },
+                success: function() {
+                    window.location.href = "/";
+                }
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

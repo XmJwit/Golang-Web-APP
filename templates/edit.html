@@ -1,52 +1,92 @@
-{{define "content"}}
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-        <meta name="description" content="">
-        <meta name="author" content="">
-        <title>Golang Template</title>
-    </head>
-    <body>
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-xl-12 col-lg-12">
-                <div class="card shadow mb-4">
-                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                        <h6 class="m-0 font-weight-bold text-primary">Edit User</h6>
-                    </div>
-                    <div class="card-body">
-                        <form class="user" method="POST" action="/update">
-                            <input type="hidden" name="uid" value="{{ .Id }}"/>
-                            <div class="form-group row">
-                                <div class="col-sm-6 mb-3 mb-sm-0">
-                                    <input type="text" class="form-control form-control-user" id="firstName"
-                                           name="firstName" placeholder="First Name"
-                                           value="{{.FirstName}}">
-                                </div>
-                                <div class="col-sm-6">
-                                    <input type="text" class="form-control form-control-user" id="lastName"
-                                           name="lastName" placeholder="Last Name"
-                                           value="{{.LastName}}">
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <input type="email" class="form-control form-control-user" id="email"
-                                       name="email" placeholder="Email Address"
-                                       value="{{.Email}}">
-                            </div>
-                            <button type="submit" class="btn btn-primary btn-user btn-block">
-                                Update
-                            </button>
-                            <hr>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
+{% raw %}
+{{ printf "当前模板变量: %#v" . }}
+{{ printf "模板名称: %s" .Name }}
+{% endraw %}
+
+{% extends "templates/base.html" %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fa fa-edit"></i> {{ .title }}</h1>
+    <a href="/" class="btn"><i class="fa fa-arrow-left"></i> 返回列表</a>
+</div>
+
+<form id="config-form" class="form">
+    <input type="hidden" id="config-id">
+    
+    <div class="form-group">
+        <label for="name">名称</label>
+        <input type="text" id="name" required>
     </div>
-    </body>
-    </html>
-{{end}}
+    
+    <div class="form-group">
+        <label for="url">URL</label>
+        <input type="url" id="url" required>
+    </div>
+    
+    <div class="form-group">
+        <label for="method">方法</label>
+        <select id="method" required>
+            <option value="GET">GET</option>
+            <option value="POST">POST</option>
+        </select>
+    </div>
+    
+    <!-- 其他字段... -->
+    
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary">
+            <i class="fa fa-save"></i> 保存
+        </button>
+    </div>
+</form>
+
+<script>
+$(document).ready(function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const configId = urlParams.get('id');
+    
+    // 如果是编辑模式，加载现有数据
+    if(configId) {
+        $.get(`/api/get?id=${configId}`, function(data) {
+            if(data.code === 0) {
+                const config = data.data;
+                $("#config-id").val(config.id);
+                $("#name").val(config.name);
+                $("#url").val(config.url);
+                $("#method").val(config.method);
+                // 填充其他字段...
+            }
+        });
+    }
+    
+    // 表单提交
+    $("#config-form").submit(function(e) {
+        e.preventDefault();
+        
+        let formData = {
+            name: $("#name").val(),
+            url: $("#url").val(),
+            method: $("#method").val(),
+            // 其他字段...
+        };
+        
+        const configId = $("#config-id").val();
+        const url = configId ? '/api/edit' : '/api/add';
+        if (configId) {
+            formData.id = configId;
+        }
+        
+        $.ajax({
+            url: url,
+            type: 'POST',
+            data: JSON.stringify({...formData,}),
+            contentType: 'application/json',
+            success: function() {
+                window.location.href = "/";
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

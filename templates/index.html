@@ -1,72 +1,54 @@
-{{define "content"}}
-    <!DOCTYPE html>
-    <html lang="en">
+{% extends "templates/base.html" %}
 
-    <head>
-        <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-        <meta name="description" content="">
-        <meta name="author" content="">
-        <title>Golang Template</title>
-    </head>
-    <body>
-    <div class="container-fluid">
-        <div class="d-sm-flex align-items-center justify-content-between mb-4">
-            <h1 class="h3 mb-0 text-gray-800">Dashboard</h1>
-            <a href="/register" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"><i
-                        class="fas fa-download fa-sm text-white-50"></i> Add New User</a>
-        </div>
-        <div class="row">
-            <div class="col-xl-12 col-lg-12">
-                <div class="card shadow mb-4">
-                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                        <h6 class="m-0 font-weight-bold text-primary">Users</h6>
-                    </div>
-                    <div class="card-body">
-                        <table class="table table-bordered" id="dataTable">
-                            <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Email</th>
-                                <th>First Name</th>
-                                <th>Last Name</th>
-                                <th>View</th>
-                                <th>Edit</th>
-                                <th>Delete</th>
-                            </tr>
-                            </thead>
-                            <tfoot>
-                            <tr>
-                                <th>ID</th>
-                                <th>Email</th>
-                                <th>First Name</th>
-                                <th>Last Name</th>
-                                <th>View</th>
-                                <th>Edit</th>
-                                <th>Delete</th>
-                            </tr>
-                            </tfoot>
-                            <tbody>
-                            {{ range .}}
-                                <tr>
-                                    <td>{{.Id}}</td>
-                                    <td>{{.Email}}</td>
-                                    <td>{{.FirstName}}</td>
-                                    <td>{{.LastName}}</td>
-                                    <td><a href="/show/{{.Id}}" class="btn btn-success btn-sm">View</a></td>
-                                    <td><a href="/edit/{{.Id}}" class="btn btn-primary btn-sm">Edit</a></td>
-                                    <td><a href="/delete/{{.Id}}" class="btn btn-danger btn-sm">Delete</a></td>
-                                </tr>
-                            {{ end }}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    </body>
-    </html>
+{% block content %}
+<div class="page-header">
+    <h1><i class="fa fa-cogs"></i> 配置列表</h1>
+    <a href="/edit" class="btn btn-primary"><i class="fa fa-plus"></i> 添加配置</a>
+</div>
 
-{{end}}
+<div class="search-box">
+    <input type="text" id="keyword" placeholder="搜索名称或URL...">
+    <select id="method-filter">
+        <option value="">所有方法</option>
+        <option value="GET">GET</option>
+        <option value="POST">POST</option>
+    </select>
+    <button id="search-btn" class="btn"><i class="fa fa-search"></i> 搜索</button>
+</div>
+
+<div class="table-responsive">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID <i class="fa fa-sort"></i></th>
+                <th>名称 <i class="fa fa-sort"></i></th>
+                <th>URL</th>
+                <th>方法</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody id="config-table">
+            <!-- 动态加载数据 -->
+        </tbody>
+    </table>
+</div>
+
+<div class="pagination">
+    <button id="prev-page" disabled><i class="fa fa-chevron-left"></i></button>
+    <span id="page-info">第1页</span>
+    <button id="next-page"><i class="fa fa-chevron-right"></i></button>
+</div>
+
+<script>
+$(document).ready(function() {
+    loadConfigs(1);
+    
+    // 分页按钮事件
+    $("#prev-page").click(() => loadConfigs(currentPage - 1));
+    $("#next-page").click(() => loadConfigs(currentPage + 1));
+    
+    // 搜索按钮事件
+    $("#search-btn").click(() => loadConfigs(1));
+});
+</script>
+{% endblock %}

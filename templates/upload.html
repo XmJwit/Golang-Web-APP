@@ -1,0 +1,157 @@
+{% extends "templates/base.html" %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fa fa-upload"></i> 文件上传</h1>
+    <a href="/" class="btn"><i class="fa fa-arrow-left"></i> 返回列表</a>
+</div>
+
+<div class="upload-container">
+    <div class="upload-box" id="drop-zone">
+        <i class="fa fa-cloud-upload"></i>
+        <p>拖放文件到此处或点击选择文件</p>
+        <input type="file" id="file-input" style="display: none;">
+        <div class="paste-hint">或按 Ctrl+V 粘贴文件</div>
+    </div>
+    
+    <div class="config-selector">
+        <label for="config-select">选择API配置:</label>
+        <select id="config-select">
+            <!-- 动态加载配置选项 -->
+        </select>
+    </div>
+    
+    <div class="upload-progress" style="display: none;">
+        <div class="progress-bar">
+            <div class="progress"></div>
+        </div>
+        <span class="progress-text">0%</span>
+    </div>
+    
+    <div id="result-container" style="display: none;">
+        <h3>上传结果:</h3>
+        <div class="result-card">
+            <div class="result-success" style="display: none;">
+                <i class="fa fa-check-circle"></i>
+                <span class="result-url"></span>
+                <button class="btn copy-btn"><i class="fa fa-copy"></i> 复制</button>
+            </div>
+            <div class="result-error" style="display: none;">
+                <i class="fa fa-times-circle"></i>
+                <span class="error-message"></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // 加载配置选项
+    $.get('/api/list?page=1&pageSize=10&keyword=&method=&sortField=created_at&sortOrder=desc', function(data) {
+        if(data.code === 0) {
+            const select = $('#config-select');
+            data.data.data.forEach(config => {
+                select.append(`<option value="${config.id}">${config.name} (${config.method} ${config.url})</option>`);
+            });
+        }
+    });
+    
+    // 拖放上传功能
+    const dropZone = $('#drop-zone');
+    const fileInput = $('#file-input');
+    
+    dropZone.on('click', () => fileInput.click());
+    
+    fileInput.on('change', function() {
+        if(this.files.length > 0) {
+            handleFiles(this.files);
+        }
+    });
+    
+    // 拖放事件
+    dropZone.on('dragover', function(e) {
+        e.preventDefault();
+        $(this).addClass('dragover');
+    });
+    
+    dropZone.on('dragleave', function() {
+        $(this).removeClass('dragover');
+    });
+    
+    dropZone.on('drop', function(e) {
+        e.preventDefault();
+        $(this).removeClass('dragover');
+        
+        if(e.originalEvent.dataTransfer.files.length > 0) {
+            handleFiles(e.originalEvent.dataTransfer.files);
+        }
+    });
+    
+    // Ctrl+V粘贴上传
+    $(document).on('paste', function(e) {
+        const items = e.originalEvent.clipboardData.items;
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].kind === 'file') {
+                const file = items[i].getAsFile();
+                handleFiles([file]);
+                break;
+            }
+        }
+    });
+    
+    // 处理文件上传
+    function handleFiles(files) {
+        const configId = $('#config-select').val();
+        if(!configId) {
+            alert('请先选择API配置');
+            return;
+        }
+        
+        const file = files[0];
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('configId', configId);
+        
+        $('.upload-progress').show();
+        
+        $.ajax({
+            url: '/api/upload',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            xhr: function() {
+                const xhr = new XMLHttpRequest();
+                xhr.upload.addEventListener('progress', function(e) {
+                    if (e.lengthComputable) {
+                        const percent = Math.round((e.loaded / e.total) * 100);
+                        $('.progress').css('width', percent + '%');
+                        $('.progress-text').text(percent + '%');
+                    }
+                }, false);
+                return xhr;
+            },
+            success: function(data) {
+                $('#result-container').show();
+                if(data.code === 0) {
+                    $('.result-success').show();
+                    $('.result-url').text(data.data.url);
+                    $('.copy-btn').click(() => {
+                        navigator.clipboard.writeText(data.data.url);
+                        alert('已复制到剪贴板');
+                    });
+                } else {
+                    $('.result-error').show();
+                    $('.error-message').text(data.message);
+                }
+            },
+            error: function() {
+                $('#result-container').show();
+                $('.result-error').show();
+                $('.error-message').text('上传失败，请重试');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
